@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import type { UserProfile, AuthTokens } from '@crm/shared-types';
+import type { UserProfile, AuthTokens, RegisterRequest, RegisterResponse } from '@crm/shared-types';
 import { api } from '@/lib/api';
 
 interface AuthContextType {
@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (data: RegisterRequest) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
   setUser: (user: UserProfile) => void;
@@ -61,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserState(result.user);
   };
 
+  const register = async (data: RegisterRequest) => {
+    return api.post<RegisterResponse>('/auth/register', data, { auth: false });
+  };
+
   const logout = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     try {
@@ -80,6 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       isAuthenticated: !!user,
       login,
+      register,
       logout,
       refreshUser: fetchUser,
       setUser,

@@ -44,3 +44,12 @@ export function useDeleteLead() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leads'] }),
   });
 }
+
+export function useAssignLead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, assignedToId }: { id: string; assignedToId: string }) =>
+      api.post<Lead>(`/leads/${id}/assign`, { assignedToId }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leads'] }),
+  });
+}

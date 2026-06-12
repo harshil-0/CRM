@@ -17,6 +17,15 @@ export function useCreateCustomer() {
   });
 }
 
+export function useUpdateCustomer() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateCustomerRequest }) =>
+      api.patch<Customer>(`/customers/${id}`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customers'] }),
+  });
+}
+
 export function useDeleteCustomer() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -118,6 +119,22 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+
+        {user?.permissions.includes('users:read') && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Team Management</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Add staff, change roles, and manage who can access the CRM.
+              </p>
+              <Link href="/team">
+                <Button variant="outline">Manage Team</Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>

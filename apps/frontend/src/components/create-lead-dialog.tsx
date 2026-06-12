@@ -12,7 +12,8 @@ import {
   Button,
   Input,
 } from '@crm/ui';
-import { useCreateLead } from '@/hooks/use-leads';
+import { useCreateLead, useAssignLead } from '@/hooks/use-leads';
+import { UserSelect } from '@/components/user-select';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -20,6 +21,7 @@ const schema = z.object({
   phone: z.string().optional(),
   company: z.string().optional(),
   source: z.string().optional(),
+  assignedToId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -31,22 +33,28 @@ interface CreateLeadDialogProps {
 
 export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) {
   const createLead = useCreateLead();
+  const assignLead = useAssignLead();
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
+
+  const assignedToId = watch('assignedToId') ?? '';
 
   const onSubmit = async (data: FormData) => {
     setError('');
     try {
-      await createLead.mutateAsync({
+      const lead = await createLead.mutateAsync({
         title: data.title,
         email: data.email || undefined,
         phone: data.phone || undefined,
         company: data.company || undefined,
         source: data.source || undefined,
       });
+      if (data.assignedToId) {
+        await assignLead.mutateAsync({ id: lead.id, assignedToId: data.assignedToId });
+      }
       reset();
       onOpenChange(false);
     } catch (err) {
@@ -86,11 +94,18 @@ export function CreateLeadDialog({ open, onOpenChange }: CreateLeadDialogProps) 
               <Input placeholder="Website, Referral..." {...register('source')} />
             </div>
           </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Assign to</label>
+            <UserSelect
+              value={assignedToId}
+              onChange={(id) => setValue('assignedToId', id)}
+            />
+          </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={createLead.isPending}>
-              {createLead.isPending ? 'Creating...' : 'Create Lead'}
+            <Button type="submit" disabled={createLead.isPending || assignLead.isPending}>
+              {createLead.isPending || assignLead.isPending ? 'Creating...' : 'Create Lead'}
             </Button>
           </div>
         </form>

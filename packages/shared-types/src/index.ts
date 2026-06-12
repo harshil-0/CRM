@@ -83,6 +83,32 @@ export interface UserProfile {
   createdAt: string;
 }
 
+/** User record from admin APIs (no permissions array) */
+export interface UserRecord {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  phone: string | null;
+  isActive: boolean;
+  role: RoleSummary;
+  lastLoginAt: string | null;
+  createdAt: string;
+}
+
+export interface RegisterResponse {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: RoleSummary;
+}
+
+export interface AssignLeadRequest {
+  assignedToId: string;
+}
+
 export interface CreateUserRequest {
   email: string;
   password: string;

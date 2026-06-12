@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Paperclip } from 'lucide-react';
+import { Plus, Trash2, Paperclip, Pencil } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,6 +22,7 @@ import {
 import { useCustomers, useCreateCustomer, useDeleteCustomer } from '@/hooks/use-customers';
 import { ImportExportButtons } from '@/components/import-export-buttons';
 import { AttachmentsPanel } from '@/components/attachments-panel';
+import { EditCustomerDialog } from '@/components/edit-customer-dialog';
 import type { Customer } from '@crm/shared-types';
 import { formatDate } from '@crm/utils';
 
@@ -39,6 +40,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [createOpen, setCreateOpen] = useState(false);
   const [attachmentsCustomer, setAttachmentsCustomer] = useState<Customer | null>(null);
+  const [editCustomer, setEditCustomer] = useState<Customer | null>(null);
   const { data, isLoading } = useCustomers({ search: search || undefined });
   const createCustomer = useCreateCustomer();
   const deleteCustomer = useDeleteCustomer();
@@ -104,6 +106,9 @@ export default function CustomersPage() {
           { key: 'createdAt', header: 'Since', cell: (row) => formatDate(row.createdAt) },
           { key: 'actions', header: '', cell: (row) => (
             <div className="flex gap-1 justify-end">
+              <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditCustomer(row)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setAttachmentsCustomer(row)}>
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -150,6 +155,8 @@ export default function CustomersPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <EditCustomerDialog customer={editCustomer} onOpenChange={(open) => !open && setEditCustomer(null)} />
 
       <Dialog open={!!attachmentsCustomer} onOpenChange={() => setAttachmentsCustomer(null)}>
         <DialogContent className="max-w-lg">

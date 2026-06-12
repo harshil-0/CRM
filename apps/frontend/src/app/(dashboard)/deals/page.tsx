@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import {
   PageHeader,
   Button,
@@ -15,6 +15,7 @@ import {
 import { useDeals, usePipelineBoard, useMoveDeal, useDeleteDeal } from '@/hooks/use-deals';
 import { useDefaultPipeline } from '@/hooks/use-pipelines';
 import { CreateDealDialog } from '@/components/create-deal-dialog';
+import { EditDealDialog } from '@/components/edit-deal-dialog';
 import { formatCompactCurrency, formatCurrency } from '@/lib/format';
 import type { Deal } from '@crm/shared-types';
 import { formatDate } from '@crm/utils';
@@ -23,6 +24,7 @@ export default function DealsPage() {
   const [search, setSearch] = useState('');
   const [view, setView] = useState<'kanban' | 'table'>('kanban');
   const [createOpen, setCreateOpen] = useState(false);
+  const [editDeal, setEditDeal] = useState<Deal | null>(null);
 
   const { data: pipeline, isLoading: pipelineLoading } = useDefaultPipeline();
   const { data: board, isLoading: boardLoading } = usePipelineBoard(pipeline?.id);
@@ -123,9 +125,14 @@ export default function DealsPage() {
               row.expectedCloseDate ? formatDate(row.expectedCloseDate) : '—'
             },
             { key: 'actions', header: '', cell: (row) => (
-              <Button variant="ghost" size="icon" onClick={() => deleteDeal.mutate(row.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1 justify-end">
+                <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditDeal(row)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => deleteDeal.mutate(row.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             )},
           ]}
           data={deals}
@@ -135,7 +142,10 @@ export default function DealsPage() {
       )}
 
       {pipeline && (
-        <CreateDealDialog open={createOpen} onOpenChange={setCreateOpen} pipeline={pipeline} />
+        <>
+          <CreateDealDialog open={createOpen} onOpenChange={setCreateOpen} pipeline={pipeline} />
+          <EditDealDialog deal={editDeal} onOpenChange={(open) => !open && setEditDeal(null)} />
+        </>
       )}
     </motion.div>
   );

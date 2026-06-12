@@ -40,6 +40,18 @@ export function useMoveDeal() {
   });
 }
 
+export function useUpdateDeal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateDealRequest }) =>
+      api.patch<Deal>(`/deals/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
+    },
+  });
+}
+
 export function useDeleteDeal() {
   const queryClient = useQueryClient();
   return useMutation({

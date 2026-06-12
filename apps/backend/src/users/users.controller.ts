@@ -28,6 +28,12 @@ export class UsersController {
     return this.usersService.findAll(query);
   }
 
+  @Get('assignable')
+  @ApiOperation({ summary: 'List active users for assignment pickers' })
+  findAssignable() {
+    return this.usersService.findAssignable();
+  }
+
   @Get(':id')
   @RequirePermissions('users:read')
   @ApiOperation({ summary: 'Get user by ID' })

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Plus, UserCheck, Trash2, Paperclip } from 'lucide-react';
+import { Plus, UserCheck, Trash2, Paperclip, Pencil } from 'lucide-react';
 import {
   PageHeader,
   Button,
@@ -18,6 +18,7 @@ import {
 } from '@crm/ui';
 import { useLeads, useConvertLead, useDeleteLead } from '@/hooks/use-leads';
 import { CreateLeadDialog } from '@/components/create-lead-dialog';
+import { EditLeadDialog } from '@/components/edit-lead-dialog';
 import { ImportExportButtons } from '@/components/import-export-buttons';
 import { AttachmentsPanel } from '@/components/attachments-panel';
 import { LEAD_STATUS_LABELS, LEAD_STATUS_VARIANT } from '@/lib/crm-labels';
@@ -33,6 +34,7 @@ export default function LeadsPage() {
   const [view, setView] = useState<'table' | 'kanban'>('table');
   const [createOpen, setCreateOpen] = useState(false);
   const [attachmentsLead, setAttachmentsLead] = useState<Lead | null>(null);
+  const [editLead, setEditLead] = useState<Lead | null>(null);
 
   const { data, isLoading } = useLeads({ search: search || undefined, status: statusFilter || undefined });
   const convertLead = useConvertLead();
@@ -118,6 +120,9 @@ export default function LeadsPage() {
             { key: 'createdAt', header: 'Created', cell: (row) => formatDate(row.createdAt) },
             { key: 'actions', header: '', cell: (row) => (
               <div className="flex gap-1 justify-end">
+                <Button variant="ghost" size="icon" title="Edit" onClick={() => setEditLead(row)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="icon" title="Attachments" onClick={() => setAttachmentsLead(row)}>
                   <Paperclip className="h-4 w-4" />
                 </Button>
@@ -149,6 +154,7 @@ export default function LeadsPage() {
       )}
 
       <CreateLeadDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <EditLeadDialog lead={editLead} onOpenChange={(open) => !open && setEditLead(null)} />
 
       <Dialog open={!!attachmentsLead} onOpenChange={() => setAttachmentsLead(null)}>
         <DialogContent className="max-w-lg">

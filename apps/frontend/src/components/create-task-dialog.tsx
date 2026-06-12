@@ -13,12 +13,14 @@ import {
   Input,
 } from '@crm/ui';
 import { useCreateTask } from '@/hooks/use-tasks';
+import { UserSelect } from '@/components/user-select';
 
 const schema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().optional(),
   dueDate: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  assignedToId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -32,10 +34,12 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   const createTask = useCreateTask();
   const [error, setError] = useState('');
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { priority: 'medium' },
   });
+
+  const assignedToId = watch('assignedToId') ?? '';
 
   const onSubmit = async (data: FormData) => {
     setError('');
@@ -45,6 +49,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
         description: data.description || undefined,
         dueDate: data.dueDate || undefined,
         priority: data.priority,
+        assignedToId: data.assignedToId || undefined,
       });
       reset();
       onOpenChange(false);
@@ -86,6 +91,10 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
                 <option value="urgent">Urgent</option>
               </select>
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Assign to</label>
+            <UserSelect value={assignedToId} onChange={(id) => setValue('assignedToId', id)} />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex justify-end gap-2">

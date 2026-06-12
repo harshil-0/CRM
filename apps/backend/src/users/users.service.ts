@@ -52,6 +52,27 @@ export class UsersService {
     return this.formatUser(user);
   }
 
+  async findAssignable() {
+    const users = await this.prisma.user.findMany({
+      where: { isActive: true },
+      orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        avatarUrl: true,
+      },
+    });
+    return users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      avatarUrl: u.avatarUrl,
+    }));
+  }
+
   async create(dto: CreateUserDto, actorId: string) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) {

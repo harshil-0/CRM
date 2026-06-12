@@ -20,6 +20,7 @@ export interface NavbarProps {
   };
   theme?: 'light' | 'dark';
   onThemeToggle?: () => void;
+  onLogout?: () => void;
   className?: string;
 }
 
@@ -31,6 +32,7 @@ export function Navbar({
   user,
   theme = 'light',
   onThemeToggle,
+  onLogout,
   className,
 }: NavbarProps) {
   return (
@@ -59,6 +61,12 @@ export function Navbar({
         {onThemeToggle && (
           <Button variant="ghost" size="icon" onClick={onThemeToggle}>
             {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+        )}
+
+        {onLogout && (
+          <Button variant="ghost" size="sm" onClick={onLogout} className="hidden sm:inline-flex">
+            Sign out
           </Button>
         )}
 

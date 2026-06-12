@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, CheckCircle2, Trash2 } from 'lucide-react';
+import { Plus, CheckCircle2, Trash2, CalendarPlus } from 'lucide-react';
 import {
   PageHeader,
   Button,
@@ -17,6 +17,7 @@ import {
 import { useTasks, useUpdateTask, useDeleteTask } from '@/hooks/use-tasks';
 import { useFollowUps, useCompleteFollowUp } from '@/hooks/use-follow-ups';
 import { CreateTaskDialog } from '@/components/create-task-dialog';
+import { CreateFollowUpDialog } from '@/components/create-follow-up-dialog';
 import {
   TASK_STATUS_LABELS,
   TASK_STATUS_VARIANT,
@@ -30,6 +31,7 @@ export default function TasksPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<TaskStatus | ''>('');
   const [createOpen, setCreateOpen] = useState(false);
+  const [followUpOpen, setFollowUpOpen] = useState(false);
 
   const { data, isLoading } = useTasks({
     search: search || undefined,
@@ -53,10 +55,16 @@ export default function TasksPage() {
         title="Tasks"
         description="Track follow-ups and action items"
         actions={
-          <Button onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            New Task
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setFollowUpOpen(true)}>
+              <CalendarPlus className="h-4 w-4" />
+              Schedule Follow-up
+            </Button>
+            <Button onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New Task
+            </Button>
+          </div>
         }
       />
 
@@ -140,6 +148,7 @@ export default function TasksPage() {
       )}
 
       <CreateTaskDialog open={createOpen} onOpenChange={setCreateOpen} />
+      <CreateFollowUpDialog open={followUpOpen} onOpenChange={setFollowUpOpen} />
     </motion.div>
   );
 }

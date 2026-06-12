@@ -114,32 +114,17 @@ Register a new user. Admin-only in production; open in dev.
 
 ## Users Module (Member 1 — Week 1)
 
-### GET `/users`
+### GET `/users` — Requires `users:read`
 **Query:** `page`, `limit`, `search`, `roleId`, `isActive`
 
-**Response 200:**
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "uuid",
-      "email": "user@example.com",
-      "firstName": "Jane",
-      "lastName": "Doe",
-      "avatarUrl": null,
-      "phone": null,
-      "isActive": true,
-      "role": { "id": "uuid", "name": "sales_rep", "displayName": "Sales Rep" },
-      "lastLoginAt": "2026-06-08T10:00:00Z",
-      "createdAt": "2026-01-01T00:00:00Z"
-    }
-  ],
-  "meta": { "page": 1, "limit": 20, "total": 45 }
-}
-```
+Paginated list of users with role info.
 
-### GET `/users/:id`
+### GET `/users/assignable` — JWT only
+Returns active users (id, name, email) for assignment pickers in leads, tasks, customers.
+
+### GET `/users/:id` — Requires `users:read`
+Single user by ID.
+
 ### POST `/users` — Requires `users:write`
 ### PATCH `/users/:id` — Requires `users:write`
 ### DELETE `/users/:id` — Requires `users:delete` (soft delete: sets isActive=false)

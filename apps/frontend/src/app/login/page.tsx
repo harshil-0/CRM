@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,11 +17,15 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const registered = searchParams.get('registered');
+  const reset = searchParams.get('reset');
 
   const {
     register,
@@ -45,6 +50,57 @@ export default function LoginPage() {
   };
 
   return (
+    <>
+      {registered && (
+        <div className="rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm px-3 py-2 mb-4">
+          Account created. Sign in with your new credentials.
+        </div>
+      )}
+      {reset && (
+        <div className="rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-sm px-3 py-2 mb-4">
+          Password updated. Sign in with your new password.
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium">Email</label>
+          <Input id="email" type="email" placeholder="you@company.com" {...register('email')} />
+          {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium">Password</label>
+            <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+              Forgot password?
+            </Link>
+          </div>
+          <Input id="password" type="password" placeholder="••••••••" {...register('password')} />
+          {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
+        </div>
+
+        {error && (
+          <div className="rounded-lg bg-destructive/10 text-destructive text-sm px-3 py-2">{error}</div>
+        )}
+
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? 'Signing in...' : 'Sign in'}
+        </Button>
+      </form>
+
+      <p className="text-center text-sm text-muted-foreground mt-6">
+        Need an account?{' '}
+        <Link href="/register" className="text-primary font-medium hover:underline">
+          Create account
+        </Link>
+      </p>
+    </>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -67,37 +123,11 @@ export default function LoginPage() {
             <CardDescription>Sign in to your account to continue</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
-                  Email
-                </label>
-                <Input id="email" type="email" placeholder="you@company.com" {...register('email')} />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">
-                  Password
-                </label>
-                <Input id="password" type="password" placeholder="••••••••" {...register('password')} />
-                {errors.password && <p className="text-xs text-destructive">{errors.password.message}</p>}
-              </div>
-
-              {error && (
-                <div className="rounded-lg bg-destructive/10 text-destructive text-sm px-3 py-2">{error}</div>
-              )}
-
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            </form>
+            <Suspense fallback={<p className="text-sm text-muted-foreground">Loading...</p>}>
+              <LoginForm />
+            </Suspense>
           </CardContent>
         </Card>
-
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Press <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted text-[10px] font-mono">⌘K</kbd> after login for command palette
-        </p>
       </motion.div>
     </div>
   );
