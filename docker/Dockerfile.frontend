@@ -1,0 +1,33 @@
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* ./
+COPY apps/frontend/package.json ./apps/frontend/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/shared-types/package.json ./packages/shared-types/
+COPY packages/utils/package.json ./packages/utils/
+RUN pnpm install --frozen-lockfile || pnpm install
+
+FROM base AS builder
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_NAME
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN pnpm --filter @crm/frontend build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/apps/frontend/.next/standalone ./
+COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+
+EXPOSE 3000
+ENV HOSTNAME="0.0.0.0"
+CMD ["node", "apps/frontend/server.js"]

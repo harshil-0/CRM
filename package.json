@@ -1,0 +1,24 @@
+{
+  "name": "crm-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agency-first CRM platform — one codebase, per-client deployments",
+  "scripts": {
+    "dev": "pnpm run --parallel dev:backend dev:frontend",
+    "dev:backend": "pnpm --filter @crm/backend dev",
+    "dev:frontend": "pnpm --filter @crm/frontend dev",
+    "build": "pnpm run --filter @crm/shared-types build && pnpm run --filter @crm/utils build && pnpm run --filter @crm/ui build && pnpm run --filter @crm/backend build && pnpm run --filter @crm/frontend build",
+    "db:generate": "pnpm --filter @crm/backend db:generate",
+    "db:migrate": "pnpm --filter @crm/backend db:migrate",
+    "db:seed": "pnpm --filter @crm/backend db:seed",
+    "db:studio": "pnpm --filter @crm/backend db:studio",
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:build": "docker compose -f docker/docker-compose.yml build",
+    "lint": "pnpm run --parallel --filter @crm/backend --filter @crm/frontend lint"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

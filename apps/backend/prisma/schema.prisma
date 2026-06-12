@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  passwordHash         String    @map("password_hash")
+  firstName            String    @map("first_name")
+  lastName             String    @map("last_name")
+  avatarUrl            String?   @map("avatar_url")
+  phone                String?
+  roleId               String    @map("role_id")
+  isActive             Boolean   @default(true) @map("is_active")
+  emailVerified        Boolean   @default(false) @map("email_verified")
+  lastLoginAt          DateTime? @map("last_login_at")
+  passwordResetToken   String?   @map("password_reset_token")
+  passwordResetExpires DateTime? @map("password_reset_expires")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  role          Role           @relation(fields: [roleId], references: [id])
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  assignedLeads     Lead[]     @relation("LeadAssignee")
+  createdLeads      Lead[]     @relation("LeadCreator")
+  assignedCustomers Customer[] @relation("CustomerAssignee")
+  createdCustomers  Customer[] @relation("CustomerCreator")
+  assignedTasks     Task[]     @relation("TaskAssignee")
+  createdTasks      Task[]     @relation("TaskCreator")
+  createdFollowUps  FollowUp[] @relation("FollowUpCreator")
+  assignedDeals     Deal[]         @relation("DealAssignee")
+  createdDeals      Deal[]         @relation("DealCreator")
+  notifications     Notification[]
+  attachments       Attachment[]
+  importJobs        ImportJob[]
+
+  @@index([email])
+  @@index([roleId])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String   @map("display_name")
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  displayName String   @map("display_name")
+  module      String
+  action      String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Lead {
+  id           String    @id @default(uuid())
+  title        String
+  email        String?
+  phone        String?
+  company      String?
+  source       String?
+  status       String    @default("new")
+  score        Int       @default(0)
+  notes        String?
+  assignedToId String?   @map("assigned_to")
+  createdById  String    @map("created_by")
+  convertedAt  DateTime? @map("converted_at")
+  customerId   String?   @unique @map("customer_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  assignedTo User?     @relation("LeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User      @relation("LeadCreator", fields: [createdById], references: [id])
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  followUps  FollowUp[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model Customer {
+  id           String   @id @default(uuid())
+  name         String
+  email        String?
+  phone        String?
+  company      String?
+  address      String?
+  tags         String[] @default([])
+  assignedToId String?  @map("assigned_to")
+  createdById  String   @map("created_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  assignedTo User?      @relation("CustomerAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User       @relation("CustomerCreator", fields: [createdById], references: [id])
+  lead       Lead?
+  followUps  FollowUp[]
+  deals      Deal[]
+
+  @@index([assignedToId])
+  @@index([createdAt])
+  @@map("customers")
+}
+
+model Task {
+  id              String    @id @default(uuid())
+  title           String
+  description     String?
+  dueDate         DateTime? @map("due_date")
+  priority        String    @default("medium")
+  status          String    @default("pending")
+  assignedToId    String?   @map("assigned_to")
+  relatedEntity   String?   @map("related_entity")
+  relatedEntityId String?   @map("related_entity_id")
+  createdById     String    @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  assignedTo User?      @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User       @relation("TaskCreator", fields: [createdById], references: [id])
+  followUps  FollowUp[]
+
+  @@index([status])
+  @@index([assignedToId])
+  @@index([dueDate])
+  @@map("tasks")
+}
+
+model FollowUp {
+  id          String    @id @default(uuid())
+  notes       String?
+  scheduledAt DateTime  @map("scheduled_at")
+  completedAt DateTime? @map("completed_at")
+  leadId      String?   @map("lead_id")
+  customerId  String?   @map("customer_id")
+  taskId      String?   @map("task_id")
+  createdById String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  lead      Lead?     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  task      Task?     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  createdBy User      @relation("FollowUpCreator", fields: [createdById], references: [id])
+
+  @@index([scheduledAt])
+  @@map("follow_ups")
+}
+
+model Pipeline {
+  id        String   @id @default(uuid())
+  name      String
+  stages    Json
+  isDefault Boolean  @default(false) @map("is_default")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  deals Deal[]
+
+  @@map("pipelines")
+}
+
+model Deal {
+  id                String    @id @default(uuid())
+  title             String
+  value             Decimal   @db.Decimal(15, 2)
+  currency          String    @default("INR")
+  stage             String
+  pipelineId        String    @map("pipeline_id")
+  customerId        String?   @map("customer_id")
+  assignedToId      String?   @map("assigned_to")
+  expectedCloseDate DateTime? @map("expected_close_date")
+  probability       Int       @default(0)
+  notes             String?
+  createdById       String    @map("created_by")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  pipeline   Pipeline  @relation(fields: [pipelineId], references: [id])
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  assignedTo User?     @relation("DealAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  createdBy  User      @relation("DealCreator", fields: [createdById], references: [id])
+
+  @@index([pipelineId])
+  @@index([stage])
+  @@index([assignedToId])
+  @@index([customerId])
+  @@map("deals")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String   @default("info")
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  filename     String
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  path         String
+  entity       String
+  entityId     String   @map("entity_id")
+  uploadedById String   @map("uploaded_by")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  uploadedBy User @relation(fields: [uploadedById], references: [id])
+
+  @@index([entity, entityId])
+  @@map("attachments")
+}
+
+model ImportJob {
+  id           String    @id @default(uuid())
+  entity       String
+  status       String    @default("pending")
+  filename     String
+  totalRows    Int       @default(0) @map("total_rows")
+  successCount Int       @default(0) @map("success_count")
+  errorCount   Int       @default(0) @map("error_count")
+  errors       Json?
+  createdById  String    @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  completedAt  DateTime? @map("completed_at")
+
+  createdBy User @relation(fields: [createdById], references: [id])
+
+  @@index([entity])
+  @@index([createdById])
+  @@map("import_jobs")
+}

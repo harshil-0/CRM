@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: crm
+          POSTGRES_PASSWORD: crm_secret
+          POSTGRES_DB: crm_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build shared packages
+        run: |
+          pnpm --filter @crm/shared-types build
+          pnpm --filter @crm/utils build
+
+      - name: Setup database
+        working-directory: apps/backend
+        env:
+          DATABASE_URL: postgresql://crm:crm_secret@localhost:5432/crm_test?schema=public
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+          npx ts-node prisma/seed.ts
+
+      - name: Build backend
+        run: pnpm --filter @crm/backend build
+
+      - name: Build frontend
+        run: pnpm --filter @crm/frontend build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001/api/v1
