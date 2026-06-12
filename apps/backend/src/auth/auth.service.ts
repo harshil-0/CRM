@@ -8,11 +8,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
-import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { LoginDto, RegisterDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
+import { comparePassword, hashPassword } from '../common/utils/password.util';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +37,7 @@ export class AuthService {
       roleId = defaultRole.id;
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const passwordHash = await hashPassword(dto.password);
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -89,7 +89,7 @@ export class AuthService {
       throw new UnauthorizedException({ code: 'UNAUTHORIZED', message: 'Invalid credentials' });
     }
 
-    const valid = await bcrypt.compare(dto.password, user.passwordHash);
+    const valid = await comparePassword(dto.password, user.passwordHash);
     if (!valid) {
       await this.auditService.log({
         userId: user.id,
@@ -192,7 +192,7 @@ export class AuthService {
       throw new BadRequestException({ code: 'VALIDATION_ERROR', message: 'Invalid or expired reset token' });
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 12);
+    const passwordHash = await hashPassword(dto.password);
     await this.prisma.user.update({
       where: { id: user.id },
       data: {
